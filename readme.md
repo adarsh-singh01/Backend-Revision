@@ -27,3 +27,10 @@ DB is always in another continent.
 ##### Middlewares
 ##### Utils
 ##### More
+
+
+
+server does not mean it is some big aws computer ...ur laptop ,phone can also be a server .
+when we use listen in express ... unlike in frontend after we console.log something the app stops ....it listens to requests
+
+IN MONGODB WHEN U SAVE A MODEL NAME IN DB it becomes plural and in lowercase...ex-User becomes users...mongo is intelligent if u write categories it wont change it.
