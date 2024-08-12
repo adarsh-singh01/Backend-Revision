@@ -49,7 +49,8 @@ eariler headers key use to be named like (x-name)..now its deprecatted
 - PATCH
 
 ## HTTP STATUS CODE
-
+ 
+ These r standards ...u can send data with 404 also
 - 1XX informational
 - 2xx success
 - 3xx redirection
