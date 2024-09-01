@@ -7,7 +7,7 @@ const connectDB=async()=>{
         console.log(`\n mongodb connected!! DBhOST :${connectionInstance.connection.host}`)
          
     } catch (error) {
-        console.log("mongo connection error",error)
+        console.log("mongo connection error ",error)//agr pass me special char hai to b dikkate aati
         process.exit(1)//ye cheez nodejs ne diya hai ise import krne ki need nhi h
     }
 }

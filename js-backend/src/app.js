@@ -13,7 +13,7 @@ app.use(express.json(
     {limit:'16kb'}
 )) 
 
-app.use(express.urlencoded({//yaha hum bta rhe hai ki url encode hoke aayegi dekh lena ...
+app.use(express.urlencoded({//yaha hum bta rhe hai ki url encode hoke aayegi dekh lena ...jaise kabhi jb google pe search kro to space ko wo %20 ya kuch likh deta hai
     extended:true,
     limit:'16kb'
 }))
