@@ -232,8 +232,69 @@ const getVideoById = asyncHandler(async (req, res) => {
                     ]
                 }
             },
-            
+            {
+                $lookup:{
+                    from:"comments",
+                    foreignField:"video",
+                    localField:"_id",
+                    as:"comments"
+                }
+            },
+            {
+                $project:{
+                    videoFile:1,
+                    thumbnail:1,
+                    title:1,
+                    description:1,
+                    duration:1,
+                    views:1,
+                    owner:1,
+                    createdAt:1,
+                    comments:1,
+                    likesCount:1,
+                    isLiked:1,
+                }
+            }
         ]
+    );
+
+    if(!video){
+        throw new ApiError(404,"video is not found")
+    }
+
+    const videoViews=await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $inc:{views:1}
+        },
+        {
+            new:true
+        }
+    )
+
+    const user=await Video.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $addToSet:{watchHistory:videoId}
+        },
+
+        {
+            new:true
+        }
+    );
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                video:video[0],
+                videoViews:videoViews,
+                user:user
+            },
+            "video fetched successfully"
+        )
     )
 })
 
