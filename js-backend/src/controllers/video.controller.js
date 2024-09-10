@@ -361,15 +361,126 @@ const updateVideo = asyncHandler(async (req, res) => {
     )
 })
 
-const deleteVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-    //TODO: delete video
-})
-
-const togglePublishStatus = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-})
-
+const deleteVideo = asyncHandler(async (req, res) => { 
+     const { videoId } = req.params 
+     //TODO: delete video 
+  
+     // also delete all the like, comment, watch history and video in owner array 
+  
+     if(!isValidObjectId(videoId)) { 
+         throw new ApiError(400, "valid video id is required."); 
+     } 
+  
+     const video = await Video.findById(videoId); 
+  
+     if(!video) { 
+         throw new ApiError(401, "Video not found"); 
+     } 
+  
+     const videoFile_public_id = video.videoFile_public_id; 
+     const thumbnail_public_id = video.thumbnail_public_id; 
+     const ownerId = video.owner; 
+  
+     const deletedVideo = await Video.findByIdAndDelete( 
+         videoId 
+     ); 
+  
+     if(!deletedVideo) { 
+         throw new ApiError(500, "Error while deleting the video"); 
+     } 
+  
+     // Delete comments associated with the video 
+     await Comment.deleteMany({ video: videoId }); 
+  
+     // Delete likes associated with the video 
+     await Like.deleteMany({ video: videoId }); 
+  
+      // Remove video from all users' watch history 
+      await User.updateMany( 
+         { watchHistory: videoId }, 
+         { $pull: { watchHistory: videoId } } 
+     ); 
+  
+     // Remove video reference from the owner's uploaded videos 
+     await User.findByIdAndUpdate( 
+         ownerId, 
+         { 
+             $pull: {video: videoId}, 
+         }, 
+  
+         { 
+             new: true 
+         } 
+     ) 
+  
+     const deleteVideoFile = await deleteFromCloudinary(videoFile_public_id).then(response => { 
+         console.log("Deletion response:", response); 
+     }) 
+     .catch(error => { 
+         console.error("Deletion failed:", error); 
+     }); 
+  
+  
+     const deleteThumbnail = await deleteFromCloudinary(thumbnail_public_id).then(response => { 
+         console.log("Deletion response:", response); 
+     }) 
+     .catch(error => { 
+         console.error("Deletion failed:", error); 
+     }); 
+  
+     return res 
+     .status(200) 
+     .json( 
+         new ApiResponse( 
+             200, {deletedVideo, deleteThumbnail, deleteVideoFile}, "Video successfully deleted from database" 
+         ) 
+     ) 
+ }) 
+  
+  
+  
+ const togglePublishStatus = asyncHandler(async (req, res) => { 
+     const { videoId } = req.params; 
+  
+     if(!videoId || !isValidObjectId(videoId)) { 
+         throw new ApiError(400, "Video id is not valid"); 
+     } 
+  
+     const video = await Video.findById(videoId); 
+  
+     if(!video) { 
+         throw new ApiError(404, "Video not found"); 
+     } 
+  
+     //   // Toggle the publish status 
+     //   video.isPublished = !video.isPublished; 
+     //   await video.save(); 
+  
+  
+     // toggle the publish status 
+  
+     const toggleStatus = await Video.findByIdAndUpdate( 
+         videoId, 
+         { 
+             $set: { 
+                 isPublished: !video.isPublished, 
+             } 
+         }, 
+         { 
+             new: true 
+         } 
+     ) 
+  
+     return res 
+     .status(200) 
+     .json( 
+         new ApiResponse( 
+             200, 
+             toggleStatus, 
+             "Status is updated successfully" 
+         ) 
+     ) 
+ })
 export {
     getAllVideos,
     publishAVideo,
