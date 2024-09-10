@@ -5,6 +5,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { response } from "express"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -51,7 +52,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
             {
                 $project:{
                     videoFile:1,
-                    thumnail:1,
+                    thumbnail:1,
                     owner:1,
                     _id:1,
                     title:1,
@@ -302,6 +303,62 @@ const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: update video details like title, description, thumbnail
 
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400,"valid video id is required")
+    }
+
+    if (!title || !description){
+        throw new ApiError(401,"title and description is required")
+    }
+
+    const newThumbnailLocalPath=req.file?.path;
+
+    if(!newThumbnailLocalPath){
+        throw new ApiError(401,"thumbnail file path is required")
+    }
+
+    const thumbnail=await uploadOnCloudinary(newThumbnailLocalPath)
+
+    if(!thumbnail.url){
+        throw new ApiError(500,"error while uploading to cloudinary")
+    }
+
+    const oldThumbnail=await Video.findById(videoId)
+
+    const oldThumbnail_public_id=oldThumbnail.thumbnail_public_id
+
+    const video=await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{
+                title:title,
+                description:description,
+                thumbnail:thumbnail.url,
+                thumbnail_public_id:thumbnail.public_id
+            }
+        },
+        {
+            new:true
+        }
+    )
+
+    await deleteFromCloudinary(oldThumbnail_public_id).then((res)=>{
+        console.log("deletion response:",response)
+        return new ApiResponse(200,{},"old file has been deleted")
+    }).catch((error)=>{
+        console.error("deletion failed:",error);
+        throw new ApiError(400,"error deleting the old file from cloudinary")
+    })
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            video,
+            "video has been successfully updated"
+        )
+    )
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
